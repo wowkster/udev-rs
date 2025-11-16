@@ -2,6 +2,7 @@ use std::ffi::OsStr;
 use std::io::Result;
 use std::marker::PhantomData;
 use std::path::Path;
+use std::ptr;
 
 use Udev;
 use {ffi, list::List, util};
@@ -96,6 +97,16 @@ impl Enumerator {
         })
     }
 
+    /// Adds a filter that matches only devices with the given attribute (acts
+    /// as a wildcard where the actual value is ignored).
+    pub fn match_attribute_exists<T: AsRef<OsStr>>(&mut self, attribute: T) -> Result<()> {
+        let attribute = util::os_str_to_cstring(attribute)?;
+
+        util::errno_to_result(unsafe {
+            ffi::udev_enumerate_add_match_sysattr(self.enumerator, attribute.as_ptr(), ptr::null())
+        })
+    }
+
     /// Adds a filter that matches only devices with the given kernel device name.
     pub fn match_sysname<T: AsRef<OsStr>>(&mut self, sysname: T) -> Result<()> {
         let sysname = util::os_str_to_cstring(sysname)?;
@@ -120,6 +131,16 @@ impl Enumerator {
                 property.as_ptr(),
                 value.as_ptr(),
             )
+        })
+    }
+
+    /// Adds a filter that matches only devices with the given property (acts as
+    /// a wildcard where the actual value is ignored).
+    pub fn match_property_exists<T: AsRef<OsStr>>(&mut self, property: T) -> Result<()> {
+        let property = util::os_str_to_cstring(property)?;
+
+        util::errno_to_result(unsafe {
+            ffi::udev_enumerate_add_match_property(self.enumerator, property.as_ptr(), ptr::null())
         })
     }
 
@@ -162,6 +183,20 @@ impl Enumerator {
                 self.enumerator,
                 attribute.as_ptr(),
                 value.as_ptr(),
+            )
+        })
+    }
+
+    /// Adds a filter that matches only devices that don't have the the given
+    /// attribute (acts as a wildcard where the actual value is ignored).
+    pub fn nomatch_attribute_exists<T: AsRef<OsStr>>(&mut self, attribute: T) -> Result<()> {
+        let attribute = util::os_str_to_cstring(attribute)?;
+
+        util::errno_to_result(unsafe {
+            ffi::udev_enumerate_add_nomatch_sysattr(
+                self.enumerator,
+                attribute.as_ptr(),
+                ptr::null(),
             )
         })
     }
